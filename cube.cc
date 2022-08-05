@@ -134,13 +134,13 @@ int main()
       // Range of clipping, we're not actually doing any clipping so this
       // really doesn't have any effect at the moment. We're scaling the
       // range of near to far on Z axis to -1.0 to +1.0.
-      float r = far - near;
+      float r = near - far;
 
       Eigen::Matrix4f projection{
          { d / aspect, 0, 0, 0 },
          { 0, d, 0, 0 },
          { 0, 0, -(far+near)/ r, -(2*(far * near ))/r },
-         // Save old value of Z so it doesn't just get set 1 one when dividec by Z.
+         // Save old value of Z so it doesn't just get set 1 one when divide by Z.
          { 0, 0, 1, 0 },
             };
 
