@@ -127,11 +127,21 @@ int main()
          }
       }
 
+      // Distance from camera to projection windows based on fov angle
+      // logicall this d factor reduces the distance points appear from the origin as the become further aways on the z axis
+      float d = 1 / ftan(fov/2.0);
+
+      // Range of clipping, we're not actually doing any clipping so this
+      // really doesn't have any effect at the moment. We're scaling the
+      // range of near to far on Z axis to -1.0 to +1.0.
+      float r = far - near;
+
       Eigen::Matrix4f projection{
-         { 1 / ( aspect * ftan( fov / 2.0 )), 0, 0, 0 },
-         { 0, 1 / (ftan(fov/2.0)), 0, 0 },
-         { 0, 0, -(far+near)/ (far - near), -(2*(far * near ))/(far -near) },
-         { 0, 0, -1, 0 },
+         { d / aspect, 0, 0, 0 },
+         { 0, d, 0, 0 },
+         { 0, 0, -(far+near)/ r, -(2*(far * near ))/r },
+         // Save old value of Z so it doesn't just get set 1 one when dividec by Z.
+         { 0, 0, 1, 0 },
             };
 
       sf::VertexArray cube(sf::LinesStrip, 0);
