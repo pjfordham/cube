@@ -11,6 +11,51 @@ float ftan(float x) { return tan(x); }
 
 typedef std::vector<Eigen::Vector4f> VertexList;
 
+const VertexList vertices = {
+   // Front face
+   {-1.0, -1.0,  1.0,  1.0},
+   { 1.0, -1.0,  1.0,  1.0},
+   { 1.0,  1.0,  1.0,  1.0},
+   {-1.0,  1.0,  1.0,  1.0},
+
+   // Back face
+   {-1.0, -1.0, -1.0,  1.0},
+   {-1.0,  1.0, -1.0,  1.0},
+   { 1.0,  1.0, -1.0,  1.0},
+   { 1.0, -1.0, -1.0,  1.0},
+
+   // Top face
+   {-1.0,  1.0, -1.0,  1.0},
+   {-1.0,  1.0,  1.0,  1.0},
+   { 1.0,  1.0,  1.0,  1.0},
+   { 1.0,  1.0, -1.0,  1.0},
+
+   // Bottom face
+   {-1.0, -1.0, -1.0,  1.0},
+   { 1.0, -1.0, -1.0,  1.0},
+   { 1.0, -1.0,  1.0,  1.0},
+   {-1.0, -1.0,  1.0,  1.0},
+
+   // Right face
+   {1.0, -1.0, -1.0,  1.0},
+   {1.0,  1.0, -1.0,  1.0},
+   {1.0,  1.0,  1.0,  1.0},
+   {1.0, -1.0,  1.0,  1.0},
+
+   // Left face
+   {-1.0, -1.0, -1.0,  1.0},
+   {-1.0, -1.0,  1.0,  1.0},
+   {-1.0,  1.0,  1.0,  1.0},
+   {-1.0,  1.0, -1.0,  1.0},
+};
+
+const int triangles[][3] = {
+   {0,  1, 2}, { 0, 2, 3}, { 4, 5, 6}, { 4, 6, 7},
+   {8,  9,10}, { 8,10,11}, {12,13,14}, {12,14,15},
+   {16,17,18}, {16,18,19}, {20,21,22}, {20,22,23}
+};
+
+
 Eigen::Matrix4f rotate_z(float v) {
    const float d1 = 2.0f * PI / 360.0f;
    float rads = v * d1;
@@ -84,28 +129,12 @@ static VertexList unitCubeCenteredAtOrigin() {
 
 int main()
 {
-   VertexList vertices;
-
    sf::RenderWindow window(sf::VideoMode(800, 800), "Cube");
    sf::Clock clock;
 
-   float aspect = 1;
    float fov = PI / 2;
-   float far = 2;
-   float near = 1;
 
    while (window.isOpen()) {
-      auto time = clock.getElapsedTime().asMilliseconds();
-      vertices = unitCubeCenteredAtOrigin();
-      for ( auto& vertex : vertices ) {
-         // Scale up cube and translate away from camera
-         vertex =
-            translate(Eigen::Vector4f(0,0,3,1)) *
-            scale(2.0+fsin(time/1000.0)/2.0) *
-            rotate(time * 90.0 / 1000.0) *
-            rotate_z(time * 90.0 / 1100.0) *
-            vertex;
-      }
 
       sf::Event event;
       while (window.pollEvent(event)) {
@@ -127,6 +156,20 @@ int main()
          }
       }
 
+      // Prepare model transformation based on time to rotate and scale the cube
+      auto time = clock.getElapsedTime().asMilliseconds();
+      Eigen::Matrix4f model =
+         translate(Eigen::Vector4f(0,0,3,1)) *
+         scale(1.0+fsin(time/1000.0)/4.0) *
+         rotate(time * 90.0 / 1000.0) *
+         rotate_z(time * 90.0 / 1100.0);
+
+
+      // Prepare projection matrix
+      float aspect = 1;
+      float far = 2;
+      float near = 1;
+
       // Distance from camera to projection windows based on fov angle
       // logicall this d factor reduces the distance points appear from the origin as the become further aways on the z axis
       float d = 1 / ftan(fov/2.0);
@@ -142,32 +185,35 @@ int main()
          { 0, 0, -(far+near)/ r, -(2*(far * near ))/r },
          // Save old value of Z so it doesn't just get set 1 one when divide by Z.
          { 0, 0, 1, 0 },
-            };
+      };
 
-      sf::VertexArray cube(sf::LinesStrip, 0);
-      for ( auto vertex : vertices ) {
-         Eigen::Vector4f vert = projection * vertex;
-         vert = vert / vert(3);
-         cube.append( sf::Vector2f( vert(0), vert(1)) );
-      }
-      if ( vertices.begin() != vertices.end() ) {
-         auto &vertex = *vertices.begin();
-         Eigen::Vector4f vert = projection * vertex;
-         vert = vert / vert(3);
-         cube.append( sf::Vector2f( vert(0), vert(1)) );
-      }
-
+      // Clear and configure view
       window.clear( sf::Color::Black );
-
-      sf::RectangleShape origin;
       window.setView( sf::View(sf::FloatRect(-1, -1, 2, 2 )) );
 
+      // Plot origin box
+      sf::RectangleShape origin;
       origin.setSize(sf::Vector2f(0.020, 0.020));
       origin.setPosition(-0.010, -0.010);
-
       window.draw( origin );
-      window.draw( cube );
+
+      // Draw triangles - apply model and projection transform to all verticies
+      // as we pass them into SFML to draw.
+      for ( const auto& triangle : triangles ) {
+         sf::VertexArray sf_triangle(sf::LineStrip, 0);
+         for ( const auto& vertex : triangle ) {
+            Eigen::Vector4f vert = projection * model * vertices[vertex];
+            vert = vert / vert(3);
+            sf_triangle.append( sf::Vector2f( vert(0), vert(1) ) );
+         }
+         Eigen::Vector4f vert = projection * model * vertices[triangle[0]];
+         vert = vert / vert(3);
+         sf_triangle.append( sf::Vector2f( vert(0), vert(1) ) );
+         window.draw( sf_triangle );
+      }
+
       window.display();
    }
+
    return 0;
 }
