@@ -187,6 +187,13 @@ int main()
          { 0, 0, 1, 0 },
       };
 
+      // Prepare transform
+      auto transform = [ m_transform = projection * model ] ( const Eigen::Vector4f &vertex ) -> sf::Vector2f {
+                          Eigen::Vector4f vert = m_transform * vertex;
+                          vert = vert / vert(3);
+                          return { vert(0), vert(1) };
+                       };
+
       // Clear and configure view
       window.clear( sf::Color::Black );
       window.setView( sf::View(sf::FloatRect(-1, -1, 2, 2 )) );
@@ -202,13 +209,9 @@ int main()
       for ( const auto& triangle : triangles ) {
          sf::VertexArray sf_triangle(sf::LineStrip, 0);
          for ( const auto& vertex : triangle ) {
-            Eigen::Vector4f vert = projection * model * vertices[vertex];
-            vert = vert / vert(3);
-            sf_triangle.append( sf::Vector2f( vert(0), vert(1) ) );
+            sf_triangle.append( transform( vertices[vertex] ) );
          }
-         Eigen::Vector4f vert = projection * model * vertices[triangle[0]];
-         vert = vert / vert(3);
-         sf_triangle.append( sf::Vector2f( vert(0), vert(1) ) );
+         sf_triangle.append( transform( vertices[triangle[0]] ) );
          window.draw( sf_triangle );
       }
 
