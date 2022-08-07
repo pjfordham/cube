@@ -80,20 +80,6 @@ Eigen::Matrix4f rotate(float v) {
    return x;
 }
 
-Eigen::Matrix4f flipX{
-   { -1, 0, 0, 0 },
-   {  0, 1, 0, 0 },
-   {  0, 0, 1, 0 },
-   {  0, 0, 0, 1 }
-};
-
-Eigen::Matrix4f flipY{
-   { 1, 0, 0, 0 },
-   { 0,-1, 0, 0 },
-   { 0, 0, 1, 0 },
-   { 0, 0, 0, 1 },
-};
-
 Eigen::Matrix4f translate(Eigen::Vector4f v) {
    Eigen::Matrix4f x{
       { 1,0,0,v(0) },
@@ -111,21 +97,6 @@ Eigen::Matrix4f scale(float v) {
       { 0,0,0,1 } };
    return x;
 }
-
-static VertexList unitCubeCenteredAtOrigin() {
-   Eigen::Vector4f one( -0.5, -0.5, -0.5, 1);
-   Eigen::Vector4f two(  0.5, -0.5, -0.5, 1);
-   Eigen::Vector4f thr(  0.5,  0.5, -0.5, 1);
-   Eigen::Vector4f fou( -0.5,  0.5, -0.5, 1);
-
-   Eigen::Vector4f fiv( -0.5, -0.5, 0.5, 1);
-   Eigen::Vector4f six(  0.5, -0.5, 0.5, 1);
-   Eigen::Vector4f sev(  0.5,  0.5, 0.5, 1);
-   Eigen::Vector4f eig( -0.5,  0.5, 0.5, 1);
-   return {one, two, thr, fou, one, fiv, six, two, six, sev, thr, sev, eig, fou, eig, fiv};
-}
-
-
 
 int main()
 {
